@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Category {
+  CPU
+  GPU
+  RAM
+  MOTHERBOARD
+  STORAGE
+  PSU
+  CASE
+  COOLING
+  OTHER
+}
+
+// Free-form lifecycle — no enforced transitions between these (see docs/00-OVERVIEW.md decision #2).
+// Smart filters (Section 08) catch inconsistent states instead of a state machine blocking them.
+enum ItemStatus {
+  BOUGHT
+  NEEDS_CLEANING
+  NEEDS_TESTING
+  FAULT_FOUND
+  REPAIRING
+  READY_TO_LIST
+  LISTED
+  SOLD
+  ARCHIVED
+}
+
+enum PhotoType {
+  BEFORE
+  AFTER
+  TEST
+  LISTING
+}
+
+enum TestResult {
+  PASS
+  FAIL
+  PENDING
+}
+
+model Item {
+  id        String     @id @default(cuid())
+  name      String
+  category  Category
+  status    ItemStatus @default(BOUGHT)
+
+  // Money is always integer pence — never Float/Decimal (docs/00-OVERVIEW.md decision #1).
+  costPence     Int  @default(0)
+  feesPence     Int  @default(0)
+  soldPricePence Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  specs    ItemSpec[]
+  photos   ItemPhoto[]
+  testLogs TestLog[]
+
+  @@index([category])
+  @@index([status])
+}
+
+// Generic key/value spec rows instead of a wide per-category column table
+// (docs/00-OVERVIEW.md decision #3).
+model ItemSpec {
+  id     String @id @default(cuid())
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  key   String
+  value String
+
+  @@index([itemId])
+}
+
+model ItemPhoto {
+  id     String    @id @default(cuid())
+  itemId String
+  item   Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  type       PhotoType
+  storageKey String // R2 object key; signed URLs are generated on request, not stored (Section 06)
+
+  createdAt DateTime @default(now())
+
+  testLogs TestLog[]
+
+  @@index([itemId])
+}
+
+model TestLog {
+  id     String @id @default(cuid())
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  checklistItem String
+  result        TestResult
+  notes         String?
+
+  evidencePhotoId String?
+  evidencePhoto   ItemPhoto? @relation(fields: [evidencePhotoId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+}
