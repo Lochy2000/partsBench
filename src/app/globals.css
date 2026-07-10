@@ -18,6 +18,9 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --color-chart-8: var(--chart-8);
+  --color-chart-7: var(--chart-7);
+  --color-chart-6: var(--chart-6);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -55,8 +58,12 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  /* Accent blue — see docs/build/02-app-shell-design-system.md for the design-system
+     methodology this was validated against (categorical palette, CVD + contrast checked).
+     One step darker than --chart-1/--ring so white button text clears WCAG AA 4.5:1
+     (the brighter #2a78d6 only reaches 4.3:1 against white — checked, not eyeballed). */
+  --primary: #256abf;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -66,21 +73,26 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: #2a78d6;
+  /* Categorical status palette — 8 hues, fixed order, validated (CVD ΔE + contrast)
+     via the dataviz skill's methodology. Mapped to ItemStatus in status-badge.tsx. */
+  --chart-1: #2a78d6; /* blue    — LISTED */
+  --chart-2: #1baf7a; /* aqua    — READY_TO_LIST */
+  --chart-3: #eda100; /* yellow  — NEEDS_TESTING */
+  --chart-4: #008300; /* green   — SOLD */
+  --chart-5: #4a3aa7; /* violet  — BOUGHT */
+  --chart-6: #e34948; /* red     — FAULT_FOUND */
+  --chart-7: #e87ba4; /* magenta — REPAIRING */
+  --chart-8: #eb6834; /* orange  — NEEDS_CLEANING */
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-primary: #256abf;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f1fc;
+  --sidebar-accent-foreground: #256abf;
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: #2a78d6;
 }
 
 .dark {
@@ -90,8 +102,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: #3987e5;
+  --primary-foreground: #0a0a0a;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -101,20 +113,25 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: #3987e5;
+  --chart-1: #3987e5; /* blue    — LISTED */
+  --chart-2: #199e70; /* aqua    — READY_TO_LIST */
+  --chart-3: #c98500; /* yellow  — NEEDS_TESTING */
+  --chart-4: #008300; /* green   — SOLD */
+  --chart-5: #9085e9; /* violet  — BOUGHT */
+  --chart-6: #e66767; /* red     — FAULT_FOUND */
+  --chart-7: #d55181; /* magenta — REPAIRING */
+  --chart-8: #d95926; /* orange  — NEEDS_CLEANING */
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #3987e5;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #16293f;
+  /* Lighter step than --primary — text-on-tinted-dark-background needs a lighter shade
+     to clear 4.5:1 than text-on-solid-fill does (checked: 6.99:1 here vs 5.44:1 for primary). */
+  --sidebar-accent-foreground: #86b6ef;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #3987e5;
 }
 
 @layer base {

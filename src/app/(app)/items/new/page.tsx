@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Category } from "@prisma/client";
 import { createItem } from "@/actions/items";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,17 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function NewItemPage() {
   const [state, formAction, pending] = useActionState(createItem, undefined);
 
   return (
-    <div className="flex flex-1 items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Quick add</CardTitle>
-        </CardHeader>
+    <>
+      <PageHeader
+        title="Add item"
+        description="Just a name and category — you can fill in the rest after."
+      />
+      <Card className="max-w-sm">
         <CardContent>
           <form action={formAction} className="space-y-4">
             <div className="space-y-1.5">
@@ -36,7 +38,7 @@ export default function NewItemPage() {
                 required
               />
               {state?.fieldErrors?.name && (
-                <p className="text-sm text-red-500">{state.fieldErrors.name[0]}</p>
+                <p className="text-sm text-destructive">{state.fieldErrors.name[0]}</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -54,7 +56,9 @@ export default function NewItemPage() {
                 </SelectContent>
               </Select>
               {state?.fieldErrors?.category && (
-                <p className="text-sm text-red-500">{state.fieldErrors.category[0]}</p>
+                <p className="text-sm text-destructive">
+                  {state.fieldErrors.category[0]}
+                </p>
               )}
             </div>
             <Button type="submit" className="w-full" disabled={pending}>
@@ -63,6 +67,6 @@ export default function NewItemPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

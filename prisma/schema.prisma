@@ -19,7 +19,7 @@ enum Category {
 }
 
 // Free-form lifecycle — no enforced transitions between these (see docs/00-OVERVIEW.md decision #2).
-// Smart filters (Section 08) catch inconsistent states instead of a state machine blocking them.
+// Smart filters (Section 09) catch inconsistent states instead of a state machine blocking them.
 enum ItemStatus {
   BOUGHT
   NEEDS_CLEANING
@@ -86,7 +86,7 @@ model ItemPhoto {
   item   Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   type       PhotoType
-  storageKey String // R2 object key; signed URLs are generated on request, not stored (Section 06)
+  storageKey String // R2 object key; signed URLs are generated on request, not stored (Section 07)
 
   createdAt DateTime @default(now())
 
