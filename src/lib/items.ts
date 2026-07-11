@@ -11,6 +11,6 @@ export function getActiveItems() {
 export function getItemById(id: string) {
   return prisma.item.findUnique({
     where: { id },
-    include: { specs: true },
+    include: { specs: true, photos: true },
   });
 }

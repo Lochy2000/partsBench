@@ -46,8 +46,27 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # bitnami/minio (not minio/minio) because GitHub Actions service containers can't
+      # override the image's command, and official minio/minio requires `server /data` args
+      # to actually run as a server — bitnami's image runs correctly from env vars alone.
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/partsbench_test
+      R2_ENDPOINT: http://localhost:9000
+      R2_ACCESS_KEY_ID: minioadmin
+      R2_SECRET_ACCESS_KEY: minioadmin
+      R2_BUCKET: partsbench-test
     steps:
       - uses: actions/checkout@v4
 
@@ -61,6 +80,14 @@ jobs:
       # `npm run test`'s pretest hook shells out to `dotenv -e .env.test -- prisma migrate deploy`
       # (same command used locally) — .env.test is gitignored, so it needs writing here first.
       - run: echo "DATABASE_URL=$DATABASE_URL" > .env.test
+
+      - name: Create MinIO test bucket
+        run: |
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
+          chmod +x /usr/local/bin/mc
+          mc alias set local "$R2_ENDPOINT" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY"
+          mc mb --ignore-existing "local/$R2_BUCKET"
+          mc anonymous set none "local/$R2_BUCKET"
 
       - run: npx prisma generate
 
