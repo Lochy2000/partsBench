@@ -1,8 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import type { ItemStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { quickAddItemSchema, updateItemSchema } from "@/lib/validation/item";
+import {
+  quickAddItemSchema,
+  updateItemSchema,
+  updateItemStatusSchema,
+} from "@/lib/validation/item";
 
 export interface ItemFormState {
   formError?: string;
@@ -24,7 +30,7 @@ export async function createItem(
 
   const item = await prisma.item.create({ data: parsed.data });
 
-  redirect(`/items/${item.id}/edit`);
+  redirect(`/items/${item.id}`);
 }
 
 export async function updateItem(
@@ -42,7 +48,6 @@ export async function updateItem(
     id: formData.get("id"),
     name: formData.get("name"),
     category: formData.get("category"),
-    status: formData.get("status"),
     costPence: formData.get("costPence"),
     feesPence: formData.get("feesPence"),
     soldPricePence: formData.get("soldPricePence"),
@@ -67,7 +72,24 @@ export async function updateItem(
       : []),
   ]);
 
-  redirect(`/items/${id}/edit`);
+  redirect(`/items/${id}`);
+}
+
+// Called directly from a client component (not a <form>) so status can change instantly
+// without touching the rest of the item's fields — see docs/build/06-item-detail-page.md.
+export async function updateItemStatus(id: string, status: ItemStatus): Promise<void> {
+  const parsed = updateItemStatusSchema.safeParse({ id, status });
+  if (!parsed.success) {
+    throw new Error("Invalid status update");
+  }
+
+  await prisma.item.update({
+    where: { id: parsed.data.id },
+    data: { status: parsed.data.status },
+  });
+
+  revalidatePath(`/items/${parsed.data.id}`);
+  revalidatePath("/");
 }
 
 export async function archiveItem(id: string): Promise<void> {

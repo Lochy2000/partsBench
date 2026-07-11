@@ -1,7 +1,7 @@
 import type { ItemStatus } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
-const STATUS_LABELS: Record<ItemStatus, string> = {
+export const STATUS_LABELS: Record<ItemStatus, string> = {
   BOUGHT: "Bought",
   NEEDS_CLEANING: "Needs cleaning",
   NEEDS_TESTING: "Needs testing",
@@ -21,7 +21,7 @@ const STATUS_LABELS: Record<ItemStatus, string> = {
 // with a visible label is the required mitigation). ARCHIVED gets the muted token
 // rather than a categorical hue — deliberately desaturated so inactive items recede
 // instead of competing with active-state colors.
-const STATUS_DOT_CLASS: Record<ItemStatus, string> = {
+export const STATUS_DOT_CLASS: Record<ItemStatus, string> = {
   LISTED: "bg-chart-1",
   READY_TO_LIST: "bg-chart-2",
   NEEDS_TESTING: "bg-chart-3",

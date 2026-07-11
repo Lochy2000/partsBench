@@ -36,7 +36,7 @@ export default async function Home() {
             {items.map((item) => (
               <Link
                 key={item.id}
-                href={`/items/${item.id}/edit`}
+                href={`/items/${item.id}`}
                 className="flex items-center justify-between gap-4 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
               >
                 <span className="font-medium text-foreground">{item.name}</span>

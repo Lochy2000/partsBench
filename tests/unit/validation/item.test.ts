@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { quickAddItemSchema, updateItemSchema } from "@/lib/validation/item";
+import {
+  quickAddItemSchema,
+  updateItemSchema,
+  updateItemStatusSchema,
+} from "@/lib/validation/item";
 
 describe("quickAddItemSchema", () => {
   it("accepts valid input", () => {
@@ -39,7 +43,6 @@ describe("updateItemSchema", () => {
     id: "abc123",
     name: "RTX 3070",
     category: "GPU",
-    status: "NEEDS_TESTING",
     costPence: 25000,
     feesPence: 0,
     soldPricePence: null,
@@ -88,8 +91,27 @@ describe("updateItemSchema", () => {
     }
   });
 
+});
+
+describe("updateItemStatusSchema", () => {
+  it("accepts a valid status", () => {
+    const result = updateItemStatusSchema.safeParse({
+      id: "abc123",
+      status: "NEEDS_TESTING",
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("rejects an invalid status", () => {
-    const result = updateItemSchema.safeParse({ ...validBase, status: "NOT_A_STATUS" });
+    const result = updateItemStatusSchema.safeParse({
+      id: "abc123",
+      status: "NOT_A_STATUS",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a missing id", () => {
+    const result = updateItemStatusSchema.safeParse({ status: "NEEDS_TESTING" });
     expect(result.success).toBe(false);
   });
 });

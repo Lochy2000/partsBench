@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Category, ItemStatus } from "@prisma/client";
+import { Category } from "@prisma/client";
 import { archiveItem, updateItem } from "@/actions/items";
+import { penceToPoundsInput, poundsInputToPenceValue } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,18 +22,52 @@ interface Spec {
   value: string;
 }
 
-export interface EditableItem {
+export interface ItemFormData {
   id: string;
   name: string;
   category: Category;
-  status: ItemStatus;
   costPence: number;
   feesPence: number;
   soldPricePence: number | null;
   specs: Spec[];
 }
 
-export function EditItemForm({ item }: { item: EditableItem }) {
+function MoneyField({
+  id,
+  label,
+  defaultPence,
+}: {
+  id: string;
+  label: string;
+  defaultPence: number | null;
+}) {
+  const [pounds, setPounds] = useState(
+    defaultPence === null ? "" : penceToPoundsInput(defaultPence),
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-sm text-muted-foreground">
+          £
+        </span>
+        <Input
+          id={id}
+          type="number"
+          step="0.01"
+          min={0}
+          className="pl-6"
+          value={pounds}
+          onChange={(e) => setPounds(e.target.value)}
+        />
+      </div>
+      <input type="hidden" name={id} value={poundsInputToPenceValue(pounds)} />
+    </div>
+  );
+}
+
+export function ItemForm({ item }: { item: ItemFormData }) {
   const [state, formAction, pending] = useActionState(updateItem, undefined);
   const [specs, setSpecs] = useState<Spec[]>(
     item.specs.map(({ key, value }) => ({ key, value })),
@@ -74,71 +109,30 @@ export function EditItemForm({ item }: { item: EditableItem }) {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="category">Category</Label>
-                <Select name="category" defaultValue={item.category}>
-                  <SelectTrigger id="category" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(Category).map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="status">Status</Label>
-                <Select name="status" defaultValue={item.status}>
-                  <SelectTrigger id="status" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(ItemStatus).map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="max-w-xs space-y-1.5">
+              <Label htmlFor="category">Category</Label>
+              <Select name="category" defaultValue={item.category}>
+                <SelectTrigger id="category" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(Category).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="costPence">Cost (pence)</Label>
-                <Input
-                  id="costPence"
-                  name="costPence"
-                  type="number"
-                  min={0}
-                  defaultValue={item.costPence}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="feesPence">Fees (pence)</Label>
-                <Input
-                  id="feesPence"
-                  name="feesPence"
-                  type="number"
-                  min={0}
-                  defaultValue={item.feesPence}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="soldPricePence">Sold price (pence)</Label>
-                <Input
-                  id="soldPricePence"
-                  name="soldPricePence"
-                  type="number"
-                  min={0}
-                  defaultValue={item.soldPricePence ?? ""}
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <MoneyField id="costPence" label="Cost" defaultPence={item.costPence} />
+              <MoneyField id="feesPence" label="Fees" defaultPence={item.feesPence} />
+              <MoneyField
+                id="soldPricePence"
+                label="Sold price"
+                defaultPence={item.soldPricePence}
+              />
             </div>
 
             <div className="space-y-2">
@@ -148,8 +142,13 @@ export function EditItemForm({ item }: { item: EditableItem }) {
                   Add spec
                 </Button>
               </div>
+              {specs.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No specs yet — add one below.
+                </p>
+              )}
               {specs.map((spec, index) => (
-                <div key={index} className="flex gap-2">
+                <div key={index} className="flex flex-col gap-2 sm:flex-row">
                   <Input
                     placeholder="Key"
                     value={spec.key}
@@ -185,7 +184,7 @@ export function EditItemForm({ item }: { item: EditableItem }) {
 
       <Separator />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <p className="text-sm text-muted-foreground">
           Archiving hides this item everywhere except direct links — it&apos;s never
           deleted.

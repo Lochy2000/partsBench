@@ -1,13 +1,19 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 
-// createItem/updateItem/archiveItem call redirect() on success, which only works inside a real
-// Next.js request context — mock it so these can be exercised directly against the test database.
+// createItem/updateItem/archiveItem call redirect(), and updateItemStatus calls revalidatePath() —
+// both only work inside a real Next.js request context — mock so these can be exercised directly
+// against the test database.
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
 
-const { archiveItem, createItem, updateItem } = await import("@/actions/items");
+const { archiveItem, createItem, updateItem, updateItemStatus } = await import(
+  "@/actions/items"
+);
 const { getActiveItems } = await import("@/lib/items");
 
 function buildFormData(fields: Record<string, string>) {
@@ -69,7 +75,6 @@ describe("item server actions (integration)", () => {
       id: item.id,
       name: "New name",
       category: "GPU",
-      status: "NEEDS_TESTING",
       costPence: "1000",
       feesPence: "0",
       soldPricePence: "",
@@ -85,7 +90,8 @@ describe("item server actions (integration)", () => {
     });
 
     expect(updated.name).toBe("New name");
-    expect(updated.status).toBe("NEEDS_TESTING");
+    // status is untouched by updateItem — it's changed independently via updateItemStatus.
+    expect(updated.status).toBe("BOUGHT");
     expect(updated.costPence).toBe(1000);
     expect(updated.specs).toHaveLength(1);
     expect(updated.specs[0].key).toBe("NewKey");
@@ -105,7 +111,6 @@ describe("item server actions (integration)", () => {
       id: item.id,
       name: "Item",
       category: "GPU",
-      status: "BOUGHT",
       costPence: "0",
       feesPence: "0",
       soldPricePence: "",
@@ -124,6 +129,42 @@ describe("item server actions (integration)", () => {
     const unchanged = await prisma.itemSpec.findMany({ where: { itemId: item.id } });
     expect(unchanged).toHaveLength(1);
     expect(unchanged[0].key).toBe("Original");
+  });
+
+  it("updateItemStatus changes only the status field", async () => {
+    const item = await prisma.item.create({
+      data: {
+        name: "Item",
+        category: "GPU",
+        status: "BOUGHT",
+        costPence: 500,
+        specs: { create: [{ key: "Speed", value: "3200MHz" }] },
+      },
+    });
+
+    await updateItemStatus(item.id, "NEEDS_TESTING");
+
+    const updated = await prisma.item.findUniqueOrThrow({
+      where: { id: item.id },
+      include: { specs: true },
+    });
+    expect(updated.status).toBe("NEEDS_TESTING");
+    expect(updated.name).toBe("Item");
+    expect(updated.costPence).toBe(500);
+    expect(updated.specs).toHaveLength(1);
+  });
+
+  it("updateItemStatus rejects an invalid status and writes nothing", async () => {
+    const item = await prisma.item.create({
+      data: { name: "Item", category: "GPU", status: "BOUGHT" },
+    });
+
+    await expect(
+      updateItemStatus(item.id, "NOT_A_STATUS" as never),
+    ).rejects.toThrow();
+
+    const unchanged = await prisma.item.findUniqueOrThrow({ where: { id: item.id } });
+    expect(unchanged.status).toBe("BOUGHT");
   });
 
   it("archiveItem sets status to ARCHIVED and excludes it from getActiveItems", async () => {
