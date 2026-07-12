@@ -108,6 +108,10 @@ model TestLog {
   evidencePhoto   ItemPhoto? @relation(fields: [evidencePhotoId], references: [id])
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
+  // One current result per checklist item per item — re-checking a box updates its row
+  // rather than accumulating duplicates (Section 08).
+  @@unique([itemId, checklistItem])
   @@index([itemId])
 }

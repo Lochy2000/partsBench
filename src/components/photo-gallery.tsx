@@ -11,7 +11,7 @@ export interface GalleryPhoto {
   url: string;
 }
 
-const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
+export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
   BEFORE: "Before",
   AFTER: "After",
   TEST: "Test",

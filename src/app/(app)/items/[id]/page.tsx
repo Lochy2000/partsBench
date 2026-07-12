@@ -4,10 +4,12 @@ import { notFound } from "next/navigation";
 import type { PhotoType } from "@prisma/client";
 import { getItemById } from "@/lib/items";
 import { createDownloadUrl } from "@/lib/r2";
+import { buildChecklistRows } from "@/lib/checklists";
 import { PageHeader } from "@/components/page-header";
 import { StatusChanger } from "@/components/status-changer";
 import { PhotoUploader } from "@/components/photo-uploader";
-import { PhotoGallery, type GalleryPhoto } from "@/components/photo-gallery";
+import { PhotoGallery, PHOTO_TYPE_LABELS, type GalleryPhoto } from "@/components/photo-gallery";
+import { TestChecklist, type EvidencePhotoOption } from "@/components/test-checklist";
 import { ItemForm } from "./item-form";
 
 const PHOTO_TYPES: { type: PhotoType; label: string }[] = [
@@ -37,6 +39,15 @@ export default async function ItemPage({
     })),
   );
 
+  const photoTypeCounts: Partial<Record<PhotoType, number>> = {};
+  const evidenceOptions: EvidencePhotoOption[] = item.photos.map((photo) => {
+    const count = (photoTypeCounts[photo.type] ?? 0) + 1;
+    photoTypeCounts[photo.type] = count;
+    return { id: photo.id, label: `${PHOTO_TYPE_LABELS[photo.type]} #${count}` };
+  });
+
+  const checklistRows = buildChecklistRows(item.category, item.testLogs);
+
   return (
     <div className="max-w-2xl">
       <Link
@@ -59,6 +70,15 @@ export default async function ItemPage({
           ))}
         </div>
         <PhotoGallery photos={photos} />
+      </div>
+
+      <div className="mt-6 space-y-2">
+        <h2 className="text-sm font-medium text-foreground">Testing checklist</h2>
+        <TestChecklist
+          itemId={item.id}
+          rows={checklistRows}
+          evidenceOptions={evidenceOptions}
+        />
       </div>
 
       <div className="mt-6">

@@ -11,6 +11,11 @@ export function getActiveItems() {
 export function getItemById(id: string) {
   return prisma.item.findUnique({
     where: { id },
-    include: { specs: true, photos: true },
+    include: {
+      specs: true,
+      // Ordered so evidence-photo labels (e.g. "Test #1", "Test #2") stay stable across reloads.
+      photos: { orderBy: { createdAt: "asc" } },
+      testLogs: true,
+    },
   });
 }
