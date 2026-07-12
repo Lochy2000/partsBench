@@ -18,6 +18,7 @@ import {
 
 const NAV_ITEMS = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
+  { title: "Inventory", href: "/inventory", icon: ListTree },
   { title: "Add item", href: "/items/new", icon: Plus },
 ];
 
@@ -52,15 +53,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  disabled
-                  tooltip="Inventory list — coming in Section 09"
-                >
-                  <ListTree />
-                  <span>Inventory</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
