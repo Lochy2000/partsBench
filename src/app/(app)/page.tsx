@@ -20,7 +20,11 @@ export default async function Home() {
       <PageHeader
         title="Dashboard"
         description="Stat cards and the action queue land here in Section 10."
-        action={<Button render={<Link href="/items/new" />}>Add item</Button>}
+        action={
+          <Button nativeButton={false} render={<Link href="/items/new" />}>
+            Add item
+          </Button>
+        }
       />
 
       {items.length === 0 ? (
@@ -28,7 +32,11 @@ export default async function Home() {
           icon={Package}
           title="No items yet"
           description="Add your first part to get started."
-          action={<Button render={<Link href="/items/new" />}>Add item</Button>}
+          action={
+            <Button nativeButton={false} render={<Link href="/items/new" />}>
+              Add item
+            </Button>
+          }
         />
       ) : (
         <Card>

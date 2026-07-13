@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ItemStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { deleteObject } from "@/lib/r2";
 import {
+  bulkItemIdsSchema,
   quickAddItemSchema,
   updateItemSchema,
   updateItemStatusSchema,
@@ -99,4 +101,45 @@ export async function archiveItem(id: string): Promise<void> {
   });
 
   redirect("/");
+}
+
+// Bulk version of archiveItem for the inventory list's multi-select (Section 09) — stays on
+// the page (no redirect) since archiving from a list of many items shouldn't navigate away.
+export async function bulkArchiveItems(ids: string[]): Promise<void> {
+  const parsed = bulkItemIdsSchema.parse({ ids });
+
+  await prisma.item.updateMany({
+    where: { id: { in: parsed.ids } },
+    data: { status: "ARCHIVED" },
+  });
+
+  revalidatePath("/inventory");
+  revalidatePath("/");
+}
+
+// Permanent delete — the one exception to "archive, never delete" (docs/00-OVERVIEW.md #7),
+// deliberately narrow: only ever deletes items that are ALREADY archived, re-checked here
+// server-side rather than trusted from the client, so this can only ever be reached via the
+// archive-first, delete-second flow regardless of what the UI sends. Removes the item's R2
+// photo objects too (cascade only covers the database rows, not storage).
+export async function bulkDeleteItems(ids: string[]): Promise<{ deletedCount: number }> {
+  const parsed = bulkItemIdsSchema.parse({ ids });
+
+  const items = await prisma.item.findMany({
+    where: { id: { in: parsed.ids }, status: "ARCHIVED" },
+    include: { photos: true },
+  });
+
+  await Promise.allSettled(
+    items.flatMap((item) => item.photos.map((photo) => deleteObject(photo.storageKey))),
+  );
+
+  const { count } = await prisma.item.deleteMany({
+    where: { id: { in: items.map((item) => item.id) } },
+  });
+
+  revalidatePath("/inventory");
+  revalidatePath("/");
+
+  return { deletedCount: count };
 }

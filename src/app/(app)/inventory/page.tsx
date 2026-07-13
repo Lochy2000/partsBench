@@ -5,8 +5,8 @@ import { getInventoryItems } from "@/lib/items";
 import { SMART_FILTERS, type SmartFilterKey } from "@/lib/filters";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { StatusBadge } from "@/components/status-badge";
 import { InventoryFilterBar } from "@/components/inventory-filter-bar";
+import { InventoryList } from "@/components/inventory-list";
 import { Button } from "@/components/ui/button";
 
 // Behind auth, reads live per-request DB state — must never be statically prerendered
@@ -29,7 +29,12 @@ function FilterTab({
   children: React.ReactNode;
 }) {
   return (
-    <Button size="sm" variant={active ? "default" : "outline"} render={<Link href={href} />}>
+    <Button
+      size="sm"
+      variant={active ? "default" : "outline"}
+      nativeButton={false}
+      render={<Link href={href} />}
+    >
       {children}
     </Button>
   );
@@ -52,7 +57,7 @@ function PagerButton({
     );
   }
   return (
-    <Button size="sm" variant="outline" render={<Link href={href} />}>
+    <Button size="sm" variant="outline" nativeButton={false} render={<Link href={href} />}>
       {children}
     </Button>
   );
@@ -137,21 +142,7 @@ export default async function InventoryPage({
             description="Try a different filter, or clear them to see everything."
           />
         ) : (
-          <div className="divide-y divide-border rounded-lg border border-border">
-            {pageItems.map((item) => (
-              <Link
-                key={item.id}
-                href={`/items/${item.id}`}
-                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-              >
-                <span className="font-medium text-foreground">{item.name}</span>
-                <span className="flex items-center gap-3">
-                  <span className="text-muted-foreground">{item.category}</span>
-                  <StatusBadge status={item.status} />
-                </span>
-              </Link>
-            ))}
-          </div>
+          <InventoryList items={pageItems} showArchived={showArchived} />
         )}
       </div>
 

@@ -45,3 +45,9 @@ export const updateItemStatusSchema = z.object({
 });
 
 export type UpdateItemStatusInput = z.infer<typeof updateItemStatusSchema>;
+
+export const bulkItemIdsSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, "Select at least one item"),
+});
+
+export type BulkItemIdsInput = z.infer<typeof bulkItemIdsSchema>;
