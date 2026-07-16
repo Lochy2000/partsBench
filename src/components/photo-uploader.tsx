@@ -63,11 +63,13 @@ export function PhotoUploader({
 
   return (
     <div className="space-y-1.5">
+      {/* No `capture` attribute — that forces mobile browsers straight into the camera app,
+          skipping the native picker's camera/gallery/files choice. Omitting it lets the
+          browser show its normal picker with both options. */}
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleFileChange}
       />

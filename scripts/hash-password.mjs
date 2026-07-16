@@ -28,12 +28,21 @@ if (password !== confirm) {
 
 const hash = await bcrypt.hash(password, 12);
 
-// Next.js expands $VARIABLE references in .env* files, and bcrypt hashes are full of
-// `$`-delimited segments — escape every `$` as `\$` so Next doesn't try to substitute them.
+// Next.js expands $VARIABLE references when loading *.env files*, and bcrypt hashes are full
+// of `$`-delimited segments — unescaped, Next silently corrupts the value on load. That
+// expansion is specific to Next's own .env-file parser, though: dashboards like Vercel's
+// inject env vars directly into process.env with no such step, so the escaped form is
+// actively wrong there (the backslashes become literal characters in the stored value).
 // See "Referencing Other Variables": https://nextjs.org/docs/app/guides/environment-variables
 const escapedHash = hash.replaceAll("$", "\\$");
 
-console.log("\nAUTH_PASSWORD_HASH=" + escapedHash);
+console.log("\nFor .env.local / .env.test (Next.js reads these as .env files):");
+console.log("AUTH_PASSWORD_HASH=" + escapedHash);
+
+console.log("\nFor Vercel (or any dashboard that sets env vars directly, no .env parsing):");
+console.log(hash);
+
 console.log(
-  "\nCopy the line above into .env.local (replacing the existing AUTH_PASSWORD_HASH line).",
+  "\nUse whichever matches where you're pasting it — mixing them up is why a password that " +
+    "works locally can fail once deployed (or vice versa).",
 );
