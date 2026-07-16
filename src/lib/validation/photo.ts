@@ -1,12 +1,15 @@
 import { PhotoType } from "@prisma/client";
 import { z } from "zod";
 
-const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"] as const;
-
 export const requestUploadSchema = z.object({
   itemId: z.string().min(1),
   photoType: z.enum(PhotoType),
-  contentType: z.enum(ALLOWED_CONTENT_TYPES),
+  // Not a strict image/* allowlist — real camera captures (especially on Android) report MIME
+  // types that don't match any fixed list, sometimes even an empty string, and this is an
+  // authenticated single-user tool, not a public upload endpoint, so there's nothing a stricter
+  // check would actually be defending against. A previous exact-enum version rejected real
+  // camera photos outright (desktop file-picker uploads worked, phone camera captures didn't).
+  contentType: z.string().min(1),
   filename: z.string().min(1).max(255),
 });
 

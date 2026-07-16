@@ -41,6 +41,26 @@ describe("photo pipeline actions (integration)", () => {
     expect(storageKey).toMatch(new RegExp(`^items/${item.id}/before/[^/]+\\.jpg$`));
   });
 
+  // Regression test: an earlier version restricted contentType to an exact allowlist
+  // (image/jpeg, image/png, image/webp, image/heic), which rejected real phone camera
+  // captures reporting other MIME types — desktop file-picker uploads worked, phone camera
+  // uploads didn't. contentType only needs to be non-empty now; nothing here should start
+  // requiring a specific image/* format again.
+  it("accepts content types outside a fixed image allowlist (real camera captures vary)", async () => {
+    const item = await prisma.item.create({
+      data: { name: "Test GPU", category: "GPU", status: "BOUGHT" },
+    });
+
+    const { storageKey } = await requestPhotoUpload({
+      itemId: item.id,
+      photoType: "BEFORE",
+      contentType: "application/octet-stream",
+      filename: "photo.jpg",
+    });
+
+    expect(storageKey).toContain(item.id);
+  });
+
   it("uploads, confirms, and serves a photo via a signed URL — not accessible unsigned", async () => {
     const item = await prisma.item.create({
       data: { name: "Test GPU", category: "GPU", status: "BOUGHT" },

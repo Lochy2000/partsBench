@@ -35,27 +35,35 @@ export function PhotoUploader({
     }
 
     setError(null);
+    // Some mobile camera captures report an empty file.type — fall back to a generic binary
+    // type rather than send "" (which would fail requestUploadSchema's non-empty check).
+    const contentType = file.type || "application/octet-stream";
+
     startTransition(async () => {
       try {
         const { uploadUrl, storageKey } = await requestPhotoUpload({
           itemId,
           photoType,
-          contentType: file.type,
+          contentType,
           filename: file.name,
         });
 
         const uploadResponse = await fetch(uploadUrl, {
           method: "PUT",
           body: file,
-          headers: { "Content-Type": file.type },
+          headers: { "Content-Type": contentType },
         });
 
         if (!uploadResponse.ok) {
-          throw new Error("Upload failed");
+          throw new Error(`Upload failed with status ${uploadResponse.status}`);
         }
 
         await confirmPhotoUpload({ itemId, photoType, storageKey });
-      } catch {
+      } catch (err) {
+        // Next.js redacts thrown Server Action error messages in production, so this won't
+        // surface the real cause there — but it's the actual error in local dev, and cheap
+        // insurance for whenever this gets debugged again.
+        console.error("Photo upload failed:", err);
         setError("Upload failed — try again.");
       }
     });
