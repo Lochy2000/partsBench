@@ -91,6 +91,30 @@ describe("updateItemSchema", () => {
     }
   });
 
+  it("treats a missing or empty notes as null", () => {
+    const missing = updateItemSchema.safeParse(validBase);
+    expect(missing.success).toBe(true);
+    if (missing.success) {
+      expect(missing.data.notes).toBeNull();
+    }
+
+    const empty = updateItemSchema.safeParse({ ...validBase, notes: "" });
+    expect(empty.success).toBe(true);
+    if (empty.success) {
+      expect(empty.data.notes).toBeNull();
+    }
+  });
+
+  it("trims notes and rejects notes over 2000 characters", () => {
+    const trimmed = updateItemSchema.safeParse({ ...validBase, notes: "  bought from Bob  " });
+    expect(trimmed.success).toBe(true);
+    if (trimmed.success) {
+      expect(trimmed.data.notes).toBe("bought from Bob");
+    }
+
+    const tooLong = updateItemSchema.safeParse({ ...validBase, notes: "a".repeat(2001) });
+    expect(tooLong.success).toBe(false);
+  });
 });
 
 describe("updateItemStatusSchema", () => {

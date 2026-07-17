@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { notFound } from "next/navigation";
-import type { PhotoType } from "@prisma/client";
+import type { PhotoType, TestResult } from "@prisma/client";
 import { getItemById } from "@/lib/items";
 import { createDownloadUrl } from "@/lib/r2";
 import { buildChecklistRows } from "@/lib/checklists";
 import { PageHeader } from "@/components/page-header";
 import { StatusChanger } from "@/components/status-changer";
 import { PhotoUploader } from "@/components/photo-uploader";
+import { QuickCaptureUploader } from "@/components/quick-capture-uploader";
 import { PhotoGallery, PHOTO_TYPE_LABELS, type GalleryPhoto } from "@/components/photo-gallery";
 import { TestChecklist, type EvidencePhotoOption } from "@/components/test-checklist";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ItemForm } from "./item-form";
 
 const PHOTO_TYPES: { type: PhotoType; label: string }[] = [
@@ -48,6 +51,14 @@ export default async function ItemPage({
 
   const checklistRows = buildChecklistRows(item.category, item.testLogs);
 
+  const resultCounts = checklistRows.reduce(
+    (acc, row) => {
+      acc[row.result] += 1;
+      return acc;
+    },
+    { PASS: 0, FAIL: 0, PENDING: 0 } as Record<TestResult, number>,
+  );
+
   return (
     <div className="max-w-2xl">
       <Link
@@ -63,27 +74,50 @@ export default async function ItemPage({
         action={<StatusChanger itemId={item.id} status={item.status} />}
       />
 
-      <div className="mt-6 space-y-4">
-        <div className="flex flex-wrap gap-2">
-          {PHOTO_TYPES.map(({ type, label }) => (
-            <PhotoUploader key={type} itemId={item.id} photoType={type} label={label} />
-          ))}
-        </div>
-        <PhotoGallery photos={photos} />
-      </div>
+      <Tabs defaultValue="overview" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="photos">Photos</TabsTrigger>
+          <TabsTrigger value="testing">Testing</TabsTrigger>
+        </TabsList>
 
-      <div className="mt-6 space-y-2">
-        <h2 className="text-sm font-medium text-foreground">Testing checklist</h2>
-        <TestChecklist
-          itemId={item.id}
-          rows={checklistRows}
-          evidenceOptions={evidenceOptions}
-        />
-      </div>
+        <TabsContent value="overview">
+          <ItemForm item={item} />
+        </TabsContent>
 
-      <div className="mt-6">
-        <ItemForm item={item} />
-      </div>
+        <TabsContent value="photos">
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <QuickCaptureUploader itemId={item.id} />
+              {PHOTO_TYPES.map(({ type, label }) => (
+                <PhotoUploader key={type} itemId={item.id} photoType={type} label={label} />
+              ))}
+            </div>
+            <PhotoGallery photos={photos} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="testing">
+          <Collapsible>
+            <CollapsibleTrigger className="group flex items-center justify-between rounded-lg border border-border p-3">
+              <span className="text-sm font-medium text-foreground">Testing checklist</span>
+              <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                {resultCounts.PASS} pass · {resultCounts.FAIL} fail · {resultCounts.PENDING} pending
+                <ChevronDown className="size-4 transition-transform group-data-panel-open:rotate-180" />
+              </span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="pt-3">
+                <TestChecklist
+                  itemId={item.id}
+                  rows={checklistRows}
+                  evidenceOptions={evidenceOptions}
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

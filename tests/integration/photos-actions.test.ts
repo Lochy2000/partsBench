@@ -8,7 +8,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-const { confirmPhotoUpload, deletePhoto, requestPhotoUpload } = await import(
+const { confirmPhotoUpload, deletePhoto, reassignPhotoType, requestPhotoUpload } = await import(
   "@/actions/photos"
 );
 const { createDownloadUrl } = await import("@/lib/r2");
@@ -125,5 +125,34 @@ describe("photo pipeline actions (integration)", () => {
     const signedGetUrl = await createDownloadUrl(storageKey);
     const response = await fetch(signedGetUrl);
     expect(response.status).toBe(404);
+  });
+
+  it("reassignPhotoType moves a quick-captured UNSORTED photo into a real category", async () => {
+    const item = await prisma.item.create({
+      data: { name: "Test GPU", category: "GPU", status: "BOUGHT" },
+    });
+
+    const { uploadUrl, storageKey } = await requestPhotoUpload({
+      itemId: item.id,
+      photoType: "UNSORTED",
+      contentType: "image/jpeg",
+      filename: "photo.jpg",
+    });
+
+    await fetch(uploadUrl, {
+      method: "PUT",
+      body: Buffer.from("fake-jpeg-bytes"),
+      headers: { "Content-Type": "image/jpeg" },
+    });
+    await confirmPhotoUpload({ itemId: item.id, photoType: "UNSORTED", storageKey });
+
+    const photo = await prisma.itemPhoto.findFirstOrThrow({ where: { itemId: item.id } });
+    expect(photo.type).toBe("UNSORTED");
+
+    await reassignPhotoType(photo.id, "BEFORE");
+
+    const updated = await prisma.itemPhoto.findUniqueOrThrow({ where: { id: photo.id } });
+    expect(updated.type).toBe("BEFORE");
+    expect(updated.storageKey).toBe(storageKey);
   });
 });

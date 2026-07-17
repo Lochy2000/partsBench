@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 import type { PhotoType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createUploadUrl, deleteObject } from "@/lib/r2";
-import { confirmUploadSchema, requestUploadSchema } from "@/lib/validation/photo";
+import {
+  confirmUploadSchema,
+  reassignPhotoTypeSchema,
+  requestUploadSchema,
+} from "@/lib/validation/photo";
 
 export interface RequestUploadResult {
   uploadUrl: string;
@@ -44,6 +48,21 @@ export async function confirmPhotoUpload(input: {
   });
 
   revalidatePath(`/items/${parsed.itemId}`);
+}
+
+// Doesn't move/rename the underlying R2 object — storageKey is treated as an opaque id
+// everywhere else (never reconstructed from type), so a reassigned photo's storage path just
+// goes cosmetically stale. Renaming on every reassignment would be a second R2 call and a new
+// failure mode for no functional benefit in a single-user tool.
+export async function reassignPhotoType(photoId: string, newType: PhotoType): Promise<void> {
+  const parsed = reassignPhotoTypeSchema.parse({ photoId, newType });
+
+  const photo = await prisma.itemPhoto.update({
+    where: { id: parsed.photoId },
+    data: { type: parsed.newType },
+  });
+
+  revalidatePath(`/items/${photo.itemId}`);
 }
 
 export async function deletePhoto(photoId: string): Promise<void> {

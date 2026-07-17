@@ -28,6 +28,12 @@ export const updateItemSchema = z.object({
     .union([z.literal(""), z.coerce.number().int().min(0)])
     .optional()
     .transform((v) => (v === "" || v === undefined ? null : v)),
+  notes: z
+    .string()
+    .trim()
+    .max(2000, "Notes must be 2000 characters or fewer")
+    .optional()
+    .transform((v) => (v === undefined || v === "" ? null : v)),
   specs: z
     .array(specSchema)
     .refine(

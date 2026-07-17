@@ -22,3 +22,12 @@ export const confirmUploadSchema = z.object({
 });
 
 export type ConfirmUploadInput = z.infer<typeof confirmUploadSchema>;
+
+// UNSORTED is excluded as a reassignment target — it's only ever the default a quick-capture
+// upload starts as, never something a photo gets moved back to.
+export const reassignPhotoTypeSchema = z.object({
+  photoId: z.string().min(1),
+  newType: z.enum(["BEFORE", "AFTER", "TEST", "LISTING"] as const satisfies readonly PhotoType[]),
+});
+
+export type ReassignPhotoTypeInput = z.infer<typeof reassignPhotoTypeSchema>;

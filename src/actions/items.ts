@@ -53,6 +53,7 @@ export async function updateItem(
     costPence: formData.get("costPence"),
     feesPence: formData.get("feesPence"),
     soldPricePence: formData.get("soldPricePence"),
+    notes: formData.get("notes") ?? undefined,
     specs,
   });
 

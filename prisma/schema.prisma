@@ -37,6 +37,7 @@ enum PhotoType {
   AFTER
   TEST
   LISTING
+  UNSORTED
 }
 
 enum TestResult {
@@ -55,6 +56,8 @@ model Item {
   costPence     Int  @default(0)
   feesPence     Int  @default(0)
   soldPricePence Int?
+
+  notes String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

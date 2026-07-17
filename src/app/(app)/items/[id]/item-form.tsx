@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Category } from "@prisma/client";
 import { archiveItem, updateItem } from "@/actions/items";
 import { penceToPoundsInput, poundsInputToPenceValue } from "@/lib/currency";
+import { getSpecTemplateKeysForCategory } from "@/lib/spec-templates";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Spec {
   key: string;
@@ -29,6 +31,7 @@ export interface ItemFormData {
   costPence: number;
   feesPence: number;
   soldPricePence: number | null;
+  notes: string | null;
   specs: Spec[];
 }
 
@@ -69,6 +72,7 @@ function MoneyField({
 
 export function ItemForm({ item }: { item: ItemFormData }) {
   const [state, formAction, pending] = useActionState(updateItem, undefined);
+  const [category, setCategory] = useState<Category>(item.category);
   const [specs, setSpecs] = useState<Spec[]>(
     item.specs.map(({ key, value }) => ({ key, value })),
   );
@@ -83,9 +87,20 @@ export function ItemForm({ item }: { item: ItemFormData }) {
     setSpecs((prev) => [...prev, { key: "", value: "" }]);
   }
 
+  function addSpecFromTemplate(key: string) {
+    setSpecs((prev) => {
+      const alreadyAdded = prev.some(
+        (spec) => spec.key.trim().toLowerCase() === key.toLowerCase(),
+      );
+      return alreadyAdded ? prev : [...prev, { key, value: "" }];
+    });
+  }
+
   function removeSpec(index: number) {
     setSpecs((prev) => prev.filter((_, i) => i !== index));
   }
+
+  const specTemplateKeys = getSpecTemplateKeysForCategory(category);
 
   return (
     <div className="space-y-6">
@@ -111,7 +126,11 @@ export function ItemForm({ item }: { item: ItemFormData }) {
 
             <div className="max-w-xs space-y-1.5">
               <Label htmlFor="category">Category</Label>
-              <Select name="category" defaultValue={item.category}>
+              <Select
+                name="category"
+                value={category}
+                onValueChange={(value) => setCategory(value as Category)}
+              >
                 <SelectTrigger id="category" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -142,6 +161,27 @@ export function ItemForm({ item }: { item: ItemFormData }) {
                   Add spec
                 </Button>
               </div>
+              {specTemplateKeys.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {specTemplateKeys.map((key) => {
+                    const alreadyAdded = specs.some(
+                      (spec) => spec.key.trim().toLowerCase() === key.toLowerCase(),
+                    );
+                    return (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant={alreadyAdded ? "secondary" : "outline"}
+                        size="sm"
+                        disabled={alreadyAdded}
+                        onClick={() => addSpecFromTemplate(key)}
+                      >
+                        {key}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
               {specs.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   No specs yet — add one below.
@@ -171,6 +211,21 @@ export function ItemForm({ item }: { item: ItemFormData }) {
               {state?.fieldErrors?.specs && (
                 <p className="text-sm text-destructive">
                   {state.fieldErrors.specs[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                name="notes"
+                placeholder="Anything worth remembering — where it came from, what's missing, what the seller said..."
+                defaultValue={item.notes ?? ""}
+              />
+              {state?.fieldErrors?.notes && (
+                <p className="text-sm text-destructive">
+                  {state.fieldErrors.notes[0]}
                 </p>
               )}
             </div>
