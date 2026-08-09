@@ -20,6 +20,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Pinned to match the npm version package-lock.json was generated with — an unpinned
+      # setup-node install can float to a newer npm whose peer-dependency resolution
+      # disagrees with the committed lockfile and makes `npm ci` fail with EUSAGE.
+      - run: npm install -g npm@10.9.3
+
       - run: npm ci
 
       - run: npx prisma generate
@@ -76,6 +81,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      # Pinned to match the npm version package-lock.json was generated with — see
+      # the comment on the same step in the lint-and-typecheck job above.
+      - run: npm install -g npm@10.9.3
 
       - run: npm ci
 
