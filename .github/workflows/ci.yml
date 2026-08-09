@@ -49,8 +49,10 @@ jobs:
       # bitnami/minio (not minio/minio) because GitHub Actions service containers can't
       # override the image's command, and official minio/minio requires `server /data` args
       # to actually run as a server — bitnami's image runs correctly from env vars alone.
+      # Bitnami pulled the free `bitnami/*` images from Docker Hub in 2026 (now paid-only);
+      # bitnamilegacy/minio is the frozen, still-pullable mirror of the last free build.
       minio:
-        image: bitnami/minio:latest
+        image: bitnamilegacy/minio:2025.7.23-debian-12-r5
         env:
           MINIO_ROOT_USER: minioadmin
           MINIO_ROOT_PASSWORD: minioadmin
