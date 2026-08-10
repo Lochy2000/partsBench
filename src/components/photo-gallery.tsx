@@ -28,7 +28,8 @@ export const PHOTO_TYPE_LABELS: Record<PhotoType, string> = {
 
 // Unsorted first — it's the most actionable group (quick-captured photos waiting to be
 // categorized). Not offered as a reassignment target below; a photo only ever starts there.
-const PHOTO_TYPE_ORDER: PhotoType[] = ["UNSORTED", "BEFORE", "AFTER", "TEST", "LISTING"];
+// Exported so other photo-grouping UI (e.g. ListingPhotoExport) uses the same order.
+export const PHOTO_TYPE_ORDER: PhotoType[] = ["UNSORTED", "BEFORE", "AFTER", "TEST", "LISTING"];
 const REASSIGN_TARGETS: PhotoType[] = ["BEFORE", "AFTER", "TEST", "LISTING"];
 
 export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
