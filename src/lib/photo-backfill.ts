@@ -22,9 +22,16 @@ export interface BackfillBatchResult {
   log: string[];
 }
 
+const CONTENT_TYPES: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
 function isCompressibleKey(key: string): boolean {
   const ext = key.split(".").pop()?.toLowerCase();
-  return ext !== undefined && ["jpg", "jpeg", "png", "webp"].includes(ext);
+  return ext !== undefined && ext in CONTENT_TYPES;
 }
 
 export async function compressBackfillBatch({
@@ -83,13 +90,19 @@ export async function compressBackfillBatch({
       // Standardize on .jpg like the client-side compressor does — sharp always outputs JPEG
       // here regardless of source format.
       const newKey = photo.storageKey.replace(/\.[^./]+$/, ".jpg");
+      const backupKey = `backup/${photo.storageKey}`;
+      const originalExt = photo.storageKey.split(".").pop()!.toLowerCase();
 
       result.log.push(
         `${photo.storageKey} — ${(original.length / 1024).toFixed(0)}KB -> ${(compressed.length / 1024).toFixed(0)}KB` +
-          (newKey !== photo.storageKey ? ` (renamed to ${newKey})` : ""),
+          (newKey !== photo.storageKey ? ` (renamed to ${newKey})` : "") +
+          (dryRun ? "" : ` (original backed up to ${backupKey})`),
       );
 
       if (!dryRun) {
+        // Overwrites/deletes below are permanent — back the original up first so it can be
+        // restored from backup/<original key> if the compressed result ever turns out wrong.
+        await putObjectBytes(backupKey, original, CONTENT_TYPES[originalExt]);
         await putObjectBytes(newKey, compressed, "image/jpeg");
         if (newKey !== photo.storageKey) {
           await prisma.itemPhoto.update({
