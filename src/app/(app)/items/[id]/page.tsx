@@ -5,11 +5,15 @@ import type { PhotoType, TestResult } from "@prisma/client";
 import { getItemById } from "@/lib/items";
 import { createDownloadUrl } from "@/lib/r2";
 import { buildChecklistRows } from "@/lib/checklists";
+import { buildListingDraft } from "@/lib/listingTemplate";
 import { PageHeader } from "@/components/page-header";
 import { StatusChanger } from "@/components/status-changer";
 import { PhotoUploader } from "@/components/photo-uploader";
 import { QuickCaptureUploader } from "@/components/quick-capture-uploader";
 import { PhotoGallery, PHOTO_TYPE_LABELS, type GalleryPhoto } from "@/components/photo-gallery";
+import { ListingPhotoExport } from "@/components/listing-photo-export";
+import { ListingDraft } from "@/components/listing-draft";
+import { ListingAttempts } from "@/components/listing-attempts";
 import { TestChecklist, type EvidencePhotoOption } from "@/components/test-checklist";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,6 +54,7 @@ export default async function ItemPage({
   });
 
   const checklistRows = buildChecklistRows(item.category, item.testLogs);
+  const listingDraft = buildListingDraft(item, checklistRows);
 
   const resultCounts = checklistRows.reduce(
     (acc, row) => {
@@ -94,6 +99,29 @@ export default async function ItemPage({
               ))}
             </div>
             <PhotoGallery photos={photos} />
+
+            <Collapsible>
+              <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border border-border p-3">
+                <span className="text-sm font-medium text-foreground">Listing</span>
+                <ChevronDown className="size-4 text-muted-foreground transition-transform group-data-panel-open:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-6 pt-3">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Export photos</p>
+                    <ListingPhotoExport itemId={item.id} photos={photos} />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Draft text</p>
+                    <ListingDraft draft={listingDraft} />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Listing attempts</p>
+                    <ListingAttempts itemId={item.id} listings={item.listings} />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </TabsContent>
 

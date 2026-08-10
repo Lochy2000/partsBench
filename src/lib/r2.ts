@@ -41,3 +41,12 @@ export function createDownloadUrl(key: string) {
 export function deleteObject(key: string) {
   return r2Client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
 }
+
+// The only place object bytes are actually read server-side (everywhere else uses a
+// presigned URL) — needed for the listing photo zip export (Section 11), which has to
+// assemble a single archive from several stored objects rather than hand the browser a URL.
+export async function getObjectBytes(key: string): Promise<Buffer> {
+  const res = await r2Client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+  const bytes = await res.Body!.transformToByteArray();
+  return Buffer.from(bytes);
+}

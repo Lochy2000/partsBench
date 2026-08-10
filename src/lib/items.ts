@@ -31,6 +31,7 @@ export function getItemById(id: string) {
       // Ordered so evidence-photo labels (e.g. "Test #1", "Test #2") stay stable across reloads.
       photos: { orderBy: { createdAt: "asc" } },
       testLogs: true,
+      listings: { orderBy: { createdAt: "desc" } },
     },
   });
 }
