@@ -40,10 +40,13 @@ export async function GET(
     zip.file(`${photo.type.toLowerCase()}-${photo.id}.${extension}`, bytes);
   }
 
-  const buffer = await zip.generateAsync({ type: "nodebuffer" });
+  const zipBytes = await zip.generateAsync({ type: "uint8array" });
   const filename = `${item.name.replace(/[^a-z0-9-]+/gi, "-")}-photos.zip`;
 
-  return new Response(buffer, {
+  // TS 5.7+ types both Buffer and jszip's Uint8Array output as Uint8Array<ArrayBufferLike>
+  // (ArrayBufferLike also covers SharedArrayBuffer), which Response's BodyInit rejects even
+  // though this is always a real ArrayBuffer at runtime — a type-system gap, not a real bug.
+  return new Response(zipBytes as BodyInit, {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="${filename}"`,
