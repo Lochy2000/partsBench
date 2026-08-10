@@ -4,28 +4,31 @@ import { useRef, useState, useTransition } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { confirmPhotoUpload, requestPhotoUpload } from "@/actions/photos";
 import { Button } from "@/components/ui/button";
+import { compressImageFile } from "@/lib/image-compression";
 
 // Same soft sanity check as PhotoUploader — see that component for why this isn't
-// server-enforced.
+// server-enforced. Checked after compression, since that's what actually gets uploaded.
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 async function uploadOne(itemId: string, file: File): Promise<void> {
-  if (file.size > MAX_FILE_BYTES) {
+  const uploadFile = await compressImageFile(file);
+
+  if (uploadFile.size > MAX_FILE_BYTES) {
     throw new Error(`${file.name} is too large (max 15MB).`);
   }
 
-  const contentType = file.type || "application/octet-stream";
+  const contentType = uploadFile.type || "application/octet-stream";
 
   const { uploadUrl, storageKey } = await requestPhotoUpload({
     itemId,
     photoType: "UNSORTED",
     contentType,
-    filename: file.name,
+    filename: uploadFile.name,
   });
 
   const uploadResponse = await fetch(uploadUrl, {
     method: "PUT",
-    body: file,
+    body: uploadFile,
     headers: { "Content-Type": contentType },
   });
 
@@ -49,7 +52,9 @@ export function QuickCaptureUploader({ itemId }: { itemId: string }) {
     setError(null);
 
     startTransition(async () => {
-      const results = await Promise.allSettled(files.map((file) => uploadOne(itemId, file)));
+      const results = await Promise.allSettled(
+        files.map((file) => uploadOne(itemId, file)),
+      );
       const failedCount = results.filter((r) => r.status === "rejected").length;
 
       if (failedCount > 0) {

@@ -21,7 +21,8 @@
     "pretest": "npm run db:migrate:test",
     "test": "vitest run",
     "test:watch": "vitest",
-    "auth:hash-password": "node scripts/hash-password.mjs"
+    "auth:hash-password": "node scripts/hash-password.mjs",
+    "photos:compress": "tsx scripts/compress-existing-photos.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1085.0",
@@ -57,6 +58,7 @@
     "prettier": "^3.9.4",
     "prisma": "^7.8.0",
     "prompts": "^2.4.2",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "^5",

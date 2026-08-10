@@ -10,7 +10,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // derives its endpoint from the account ID instead. forcePathStyle is required for MinIO and
 // harmless for R2, so it's left on unconditionally rather than branching per-target.
 const endpoint =
-  process.env.R2_ENDPOINT ?? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+  process.env.R2_ENDPOINT ??
+  `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
 const BUCKET = process.env.R2_BUCKET!;
 
@@ -46,7 +47,22 @@ export function deleteObject(key: string) {
 // presigned URL) — needed for the listing photo zip export (Section 11), which has to
 // assemble a single archive from several stored objects rather than hand the browser a URL.
 export async function getObjectBytes(key: string): Promise<Buffer> {
-  const res = await r2Client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+  const res = await r2Client.send(
+    new GetObjectCommand({ Bucket: BUCKET, Key: key }),
+  );
   const bytes = await res.Body!.transformToByteArray();
   return Buffer.from(bytes);
+}
+
+// Direct server-side write, bypassing the presigned-URL flow browsers use. Needed by
+// scripts/compress-existing-photos.ts, which re-encodes and overwrites objects in place.
+export function putObjectBytes(key: string, body: Buffer, contentType: string) {
+  return r2Client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
 }

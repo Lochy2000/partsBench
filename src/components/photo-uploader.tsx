@@ -5,10 +5,12 @@ import type { PhotoType } from "@prisma/client";
 import { Loader2, Upload } from "lucide-react";
 import { confirmPhotoUpload, requestPhotoUpload } from "@/actions/photos";
 import { Button } from "@/components/ui/button";
+import { compressImageFile } from "@/lib/image-compression";
 
 // Soft client-side sanity check, not a server-enforced limit — a presigned PUT URL doesn't
 // support size conditions the way a presigned POST policy would, and that complexity isn't
-// worth it for a single-user internal tool.
+// worth it for a single-user internal tool. Checked after compression, since that's what
+// actually gets uploaded.
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 
 export function PhotoUploader({
@@ -29,28 +31,32 @@ export function PhotoUploader({
     event.target.value = "";
     if (!file) return;
 
-    if (file.size > MAX_FILE_BYTES) {
-      setError("Photo is too large (max 15MB).");
-      return;
-    }
-
     setError(null);
-    // Some mobile camera captures report an empty file.type — fall back to a generic binary
-    // type rather than send "" (which would fail requestUploadSchema's non-empty check).
-    const contentType = file.type || "application/octet-stream";
 
     startTransition(async () => {
       try {
+        const uploadFile = await compressImageFile(file);
+
+        if (uploadFile.size > MAX_FILE_BYTES) {
+          setError("Photo is too large (max 15MB).");
+          return;
+        }
+
+        // Some mobile camera captures report an empty file.type — fall back to a generic
+        // binary type rather than send "" (which would fail requestUploadSchema's non-empty
+        // check).
+        const contentType = uploadFile.type || "application/octet-stream";
+
         const { uploadUrl, storageKey } = await requestPhotoUpload({
           itemId,
           photoType,
           contentType,
-          filename: file.name,
+          filename: uploadFile.name,
         });
 
         const uploadResponse = await fetch(uploadUrl, {
           method: "PUT",
-          body: file,
+          body: uploadFile,
           headers: { "Content-Type": contentType },
         });
 
