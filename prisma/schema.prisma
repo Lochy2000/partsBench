@@ -46,6 +46,18 @@ enum TestResult {
   PENDING
 }
 
+enum ListingPlatform {
+  EBAY
+  FACEBOOK_MARKETPLACE
+  OTHER
+}
+
+enum ListingStatus {
+  DRAFT
+  LISTED
+  SOLD
+}
+
 model Item {
   id        String     @id @default(cuid())
   name      String
@@ -65,6 +77,7 @@ model Item {
   specs    ItemSpec[]
   photos   ItemPhoto[]
   testLogs TestLog[]
+  listings Listing[]
 
   @@index([category])
   @@index([status])
@@ -116,5 +129,25 @@ model TestLog {
   // One current result per checklist item per item — re-checking a box updates its row
   // rather than accumulating duplicates (Section 08).
   @@unique([itemId, checklistItem])
+  @@index([itemId])
+}
+
+// An item can have multiple listing attempts across platforms (Section 11) — this is
+// separate from Item's own status field, which tracks the item's physical lifecycle.
+model Listing {
+  id     String @id @default(cuid())
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  platform ListingPlatform
+  url      String?
+  status   ListingStatus @default(DRAFT)
+
+  // Money is always integer pence — never Float/Decimal (docs/00-OVERVIEW.md decision #1).
+  pricePence Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([itemId])
 }
